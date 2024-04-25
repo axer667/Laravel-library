@@ -1,0 +1,63 @@
+.dashboard-books {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 6px 12px;
+    margin-top: 12px;
+    .list {
+        display: flex;
+        flex-direction: row;
+        justify-content: left;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        align-items: stretch;
+    }
+
+    &.dashboard-books_all{
+        background-color: #d9d9d9;
+        .list-books {
+            background-color: white;
+        }
+    }
+
+    &.dashboard-books_returned {
+        background-color: #dbffc6;
+        .list-books {
+            background-color: #f2ffee;
+        }
+    }
+
+    &.dashboard-books_need_to_returned {
+        background-color: #fff4c6;
+        .list-books {
+            background-color: #fff8ee;
+        }
+    }
+
+    &.dashboard-books_need_to_returned_immediately {
+        background-color: #ffdac6;
+        .list-books {
+            background-color: #fff5ee;
+        }
+    }
+
+    &.dashboard-books_overdue {
+        background-color: #ffc6c6;
+        .list-books {
+            background-color: #ffeeee;
+        }
+    }
+
+    &.dashboard-books_overdue_but_returned {
+        background-color: #c6ceff;
+        .list-books {
+            background-color: #eef4ff;
+        }
+    }
+}
+
+.list-books {
+    border: 1px solid black;
+    padding: 12px;
+    margin: 12px;
+    width: calc(33% - 50px);
+}

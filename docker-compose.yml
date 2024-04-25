@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  library-app-employees:
+    build:
+      context: .
+      dockerfile: Dockerfile.employees
+    container_name: library-app-employees
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./src_employees:/var/www
+      - ./src_employees/.env:/var/www/.env
+    environment:
+      - APP_ENV=local
+    networks:
+      - library-employees-network
+
+  library-app-clients:
+    build:
+      context: .
+      dockerfile: Dockerfile.clients
+    container_name: library-app-clients
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./src_clients:/var/www
+      - ./src_clients/.env:/var/www/.env
+    environment:
+      - APP_ENV=local
+    networks:
+      - library-clients-network
+
+  composer-library-employees:
+    build:
+      context: .
+      dockerfile: Dockerfile.composer
+    volumes:
+      - ./src_employees:/var/www/html
+    depends_on:
+      - library-app-employees
+    networks:
+      - library-employees-network
+
+  composer-library-clients:
+    build:
+      context: .
+      dockerfile: Dockerfile.composer
+    volumes:
+      - ./src_clients:/var/www/html
+    depends_on:
+      - library-app-clients
+    networks:
+      - library-clients-network
+
+
+  nginx-rproxy-library:
+    image: nginx:alpine
+    container_name: nginx-rproxy-library
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - library-app-clients
+      - library-app-employees
+      - nginx-library-clients
+      - nginx-library-employees
+      - composer-library-employees
+      - composer-library-clients
+    networks:
+      - library-employees-network
+      - library-clients-network
+
+  nginx-library-clients:
+    build:
+      context: ./hosts/clients
+    container_name: nginx-library-clients
+    ports:
+      - "8081:80"
+    volumes:
+      - ./src_clients:/var/www
+      - ./hosts/clients/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - library-clients-network
+
+  nginx-library-employees:
+    build:
+      context: ./hosts/employees
+    container_name: nginx-library-employees
+    ports:
+      - "8082:80"
+    volumes:
+      - ./src_employees:/var/www
+      - ./hosts/employees/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - library-employees-network
+
+  node-employees:
+    build:
+      context: .
+      dockerfile: Dockerfile.node-employees
+    container_name: node-employees
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./src_employees:/var/www
+      - /var/www/node_modules
+    networks:
+      - library-employees-network
+    depends_on:
+      - composer-library-employees
+
+  node-clients:
+    build:
+      context: .
+      dockerfile: Dockerfile.node-clients
+    container_name: node-clients
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./src_clients:/var/www
+      - /var/www/node_modules
+    networks:
+      - library-clients-network
+    depends_on:
+      - composer-library-clients
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - laravel_dbdata:/var/lib/mysql
+    networks:
+      - library-employees-network
+      - library-clients-network
+    ports:
+      - "3306:3306"
+
+networks:
+  library-employees-network:
+    driver: bridge
+  library-clients-network:
+    driver: bridge
+
+volumes:
+  laravel_dbdata:
+    driver: local
